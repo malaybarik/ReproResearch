@@ -1,0 +1,107 @@
+Assignment 1
+========================================================
+Reading the 
+
+
+```{r}
+activity <- read.csv("activity.csv")
+
+##converting variable interval to factor variable
+activity$interval <- factor(activity$interval)
+```
+
+Plotting histogram of the total number of steps taken each day
+
+```{r fig.width=7, fig.height=6}
+histogram(activity$steps, xlab="Steps per Day", ylab="% Number of Days")
+```
+
+##Calculate and report the mean and median total number of steps taken per day
+```{r}
+steps_mm <- c("Date", "Mean Steps", "Median Steps")
+for (i in levels(activity$date)){
+  sub_act <- subset(activity, activity$date==i)
+  steps_mm <- c(steps_mm, i, mean(sub_act$steps, na.rm=T), median(sub_act$steps, na.rm=T))
+}
+print (steps_mm)
+```
+
+Plotting average stetps per interval across dates
+```{r}
+steps <- c()
+interval <- c()
+max_steps <- c()
+for (i in levels(activity$interval)){
+  sub_act <- subset(activity, activity$interval==i)
+  ##interval <- c(interval, i)
+  if (mean(sub_act$steps, na.rm=T) > max(steps)){ max_steps <- c(i)}
+  steps <- c(steps, mean(sub_act$steps, na.rm=T))
+}
+
+plot (steps, type="l", xlab="Time Interval", ylab="Average Steps", main="Average Steps across interval")
+max_steps
+```
+
+Counting number of rows containing NA
+```{r}
+narow <- 0
+for (i in 1:nrow(activity)){
+  nacount <-0
+  for (j in 1:ncol(activity)){
+    if (is.na(activity[[i,j]])){
+      nacount <- nacount +1
+    }
+  }
+  if (nacount ==0){narow <- narow +1}
+}
+narow
+```
+
+Creating new data set containing replaced NA values with day's mean or 0 if nan
+
+```{r}
+new_Act <- activity
+newMean <- 0
+for (i in 1:nrow(new_Act)){
+  if (is.na(new_Act$steps[i])){
+    sub_act <- subset(new_Act, new_Act$date==new_Act$date[i])
+    newMean <- mean(sub_act$steps, na.rm=T)
+    if (is.nan(newMean)){
+      new_Act$steps[i] <- 0
+    }
+    else {new_Act$steps[i]<- newMean}
+  }
+}
+```
+Histogram of the total number of steps taken each day on NA replacced dataset
+```{r}
+histogram(new_Act$steps, xlab="Steps per Day", ylab="% Number of Days")
+```
+Calculate and report the mean and median total number of steps taken per day
+
+```{r}steps_mm_new <- c("Date", "Mean Steps", "Median Steps")
+for (i in levels(new_Act$date)){
+  sub_act <- subset(new_Act, new_Act$date==i)
+  steps_mm_new <- c(steps_mm_new, i, mean(sub_act$steps, na.rm=T), median(sub_act$steps, na.rm=T))
+}
+print (steps_mm_new)
+```
+
+Are there differences in activity patterns between weekdays and weekends?
+```{r}
+new_Act$date<- as.Date(new_Act$date)
+new_Act$day <- weekdays(new_Act$date)
+new_Act$day <- factor(new_Act$day)
+new_Act$wkday <- new_Act$day
+if (new_Act$wkday == "Sunday"){new_Act$wkday <- 0}
+if (new_Act$wkday == "Saturday"){ new_Act <- 0}
+if (new_Act$wkday == "Monday"){new_Act$wkday <- 1}
+if (new_Act$wkday == "Tuesday"){new_Act$wkday <- 1}
+if (new_Act$wkday == "Wednesday"){new_Act$wkday <- 1}
+if (new_Act$wkday == "Thursday"){new_Act$wkday <- 1}
+if (new_Act$wkday == "Friday"){new_Act$wkday <- 1}
+
+new_Act$wkday <- factor(new_Act$wkday, levels=c("Weekdays", "Weekend"))
+
+xyplot(steps~interval | new_Act$wkday, type = "l", layout=c(1,2))
+```
